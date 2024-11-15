@@ -1,9 +1,22 @@
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import CreateAPIView
+from django.views.generic import View
+from django.http import HttpResponse
+import os
+
 from .models import PortfolioItem, Stock
-from .serializers import PortfolioItemSerializer, PortfolioItemCreateSerializer, PortfolioItemUpdateSerializer, StockSerializer, UserSerializer
+from .serializers import (
+    PortfolioItemSerializer,
+    PortfolioItemCreateSerializer,
+    StockSerializer,
+    UserSerializer,
+    UserRegistrationSerializer,
+)
 from django.contrib.auth.models import User
+
 
 class PortfolioViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -14,10 +27,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return PortfolioItemCreateSerializer
-        elif self.action in ['create','update', 'partial_update']:
-            return PortfolioItemUpdateSerializer
-        else:
-            return PortfolioItemSerializer
+        return PortfolioItemSerializer
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -26,38 +36,39 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def summary(self, request):
         user = request.user
         portfolio_items = PortfolioItem.objects.filter(user=user)
-        total_value = 0
-        top_performers = []
+        total_value = sum(item.quantity * item.purchase_price for item in portfolio_items)
 
-        for item in portfolio_items:
-            current_price = fetch_stock_data(item.stock.symbol) or item.purchase_price
-            position_value = current_price * item.quantity
-            total_value += position_value
-            top_performers.append({
+        top_performers = [
+            {
                 'name': item.stock.name,
-                'value': f"${position_value:,.2f}"
-            })
-
-        # Sort top performers by value descending
-        top_performers = sorted(top_performers, key=lambda x: float(x['value'].replace('$', '').replace(',', '')), reverse=True)
+                'symbol': item.stock.symbol,
+                'quantity': item.quantity,
+                'value': f"${item.quantity * item.purchase_price:.2f}"
+            }
+            for item in portfolio_items
+        ]
 
         response_data = {
             'name': user.username,
             'portfolio_value': total_value,
-            'top_performers': top_performers[:3],  # Top 3 performers
+            'top_performers': sorted(top_performers, key=lambda x: float(x['value'][1:]), reverse=True)[:3]
         }
         return Response(response_data)
+
+class PortfolioItemViewSet(ModelViewSet):
+    queryset = PortfolioItem.objects.all()
+    serializer_class = PortfolioItemSerializer
+
+    def get_queryset(self):
+        """
+        Ensure the user can only view/edit their own portfolio items.
+        """
+        return PortfolioItem.objects.filter(user=self.request.user)
 
 class StockViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
-    @action(detail=False, methods=['get'], url_path='search')
-    def search(self, request):
-        query = request.query_params.get('q', '')
-        stocks = Stock.objects.filter(symbol__icontains=query)[:10]
-        serializer = self.get_serializer(stocks, many=True)
-        return Response(serializer.data)
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
@@ -65,3 +76,20 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return User.objects.filter(id=self.request.user.id)
+
+
+class RegisterUserView(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
+
+
+class ReactAppView(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            with open(os.path.join(os.path.dirname(__file__), '../frontend/build/index.html')) as file:
+                return HttpResponse(file.read())
+        except FileNotFoundError:
+            return HttpResponse(
+                "React app build files not found. Please build the React app and place the files in the correct directory.",
+                status=501,
+            )

@@ -49,9 +49,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'portfolio',
 
-    'corsheaders',
+
     'django_extensions',
     'channels',
+    'corsheaders',
 ]
 
 REST_FRAMEWORK = {
@@ -62,6 +63,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
@@ -92,7 +94,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend', 'build')],  # Path to React build folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -105,23 +107,30 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-import dj_database_url
-import os
-
 DATABASES = {
-    'default': dj_database_url.config('postgresql://portfoliotracker_user:6r5Rm3W0vvo91LtpEM9BZ3guyocMq3kg@dpg-csrp5bhu0jms73e1plj0-a/portfoliotracker')
+    'default': dj_database_url.config(
+        default='postgresql://portfoliotracker_user:6r5Rm3W0vvo91LtpEM9BZ3guyocMq3kg@dpg-csrp5bhu0jms73e1plj0-a.ohio-postgres.render.com/portfoliotracker'
+    )
 }
 
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000"
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+CSRF_COOKIE_HTTPONLY = False
 
 
 # Password validation
@@ -146,9 +155,13 @@ ASGI_APPLICATION = 'backend.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('localhost', 6379)],
+        },
     },
 }
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -166,6 +179,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'frontend', 'build', 'static'),  # Correctly pointing to the static folder
+]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 

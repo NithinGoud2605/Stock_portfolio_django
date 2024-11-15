@@ -1,23 +1,27 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
+
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem('access');
+  return token ? children : <Navigate to="/" />;
+};
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <PrivateRoute>
               <Dashboard />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 
