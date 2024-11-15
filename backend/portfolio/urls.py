@@ -1,15 +1,12 @@
 from django.urls import path, include
-from django.contrib import admin
 from rest_framework.routers import DefaultRouter
-from .views import PortfolioItemViewSet, StockViewSet,UserRegistrationView
+from .views import PortfolioViewSet, StockViewSet, UserViewSet
 
 router = DefaultRouter()
-router.register(r'portfolio', PortfolioItemViewSet, basename='portfolio')
-router.register(r'stocks', StockViewSet)
+router.register(r'portfolio', PortfolioViewSet, basename='portfolio')
+router.register(r'stocks', StockViewSet, basename='stocks')
+router.register(r'user', UserViewSet, basename='user')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
     path('', include(router.urls)),
-    path('register/', UserRegistrationView.as_view(), name='register'),
 ]

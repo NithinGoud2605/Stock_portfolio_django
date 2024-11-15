@@ -1,8 +1,8 @@
-import requests
+import yfinance as yf
 
 def fetch_stock_data(symbol):
     """
-    Fetch stock data for the given symbol from Yahoo Finance API.
+    Fetch stock data for the given symbol using yfinance.
     
     Args:
         symbol (str): The stock symbol (e.g., "AAPL" for Apple Inc.).
@@ -10,35 +10,25 @@ def fetch_stock_data(symbol):
     Returns:
         dict: A dictionary containing stock data, or an error message.
     """
-    base_url = 'https://query1.finance.yahoo.com/v7/finance/quote'
-    params = {
-        'symbols': symbol,
-    }
-    
     try:
-        response = requests.get(base_url, params=params)
-        response.raise_for_status()  # Raise HTTPError for bad responses
-        data = response.json()
-        
-        # Validate response structure
-        quote_response = data.get("quoteResponse", {})
-        results = quote_response.get("result", [])
-        
-        if results:
-            stock_info = results[0]
+        stock = yf.Ticker(symbol)
+        data = stock.history(period='1d')  # Fetch daily stock data
+
+        if not data.empty:
+            last_close = data['Close'].iloc[-1]
+            prev_close = data['Close'].iloc[-2] if len(data) > 1 else last_close
+            change = last_close - prev_close
+            percent_change = (change / prev_close * 100) if prev_close else 0
+
             return {
-                "symbol": stock_info.get("symbol"),
-                "price": stock_info.get("regularMarketPrice"),
-                "change": stock_info.get("regularMarketChange"),
-                "percent_change": stock_info.get("regularMarketChangePercent"),
-                "market_time": stock_info.get("regularMarketTime"),
+                "symbol": symbol,
+                "price": last_close,
+                "change": change,
+                "percent_change": percent_change,
+                "market_time": data.index[-1].isoformat(),
             }
         else:
-            return {"error": f"No data found for symbol: {symbol}"}
-    
-    except requests.RequestException as e:
-        return {"error": f"Network or connection error: {str(e)}"}
-    except ValueError as e:
-        return {"error": f"Invalid response: {str(e)}"}
+            return {"error": f"No data available for symbol: {symbol}"}
+
     except Exception as e:
         return {"error": f"Unexpected error: {str(e)}"}

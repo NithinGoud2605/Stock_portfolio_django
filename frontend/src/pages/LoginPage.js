@@ -1,36 +1,44 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await login(username, password); // Call login service
-      if (data.access) {
-        localStorage.setItem('access', data.access); // Store access token
-        localStorage.setItem('refresh', data.refresh); // Store refresh token
-        console.log('Login successful');
-        navigate('/dashboard'); // Navigate to the dashboard
-      } else {
-        console.error('Login failed: Invalid response format');
-      }
+      const data = await login(username, password);
+      localStorage.setItem('access', data.access);
+      localStorage.setItem('refresh', data.refresh);
+      navigate('/dashboard'); // Redirect to dashboard
     } catch (error) {
-      console.error('Login failed', error.message);
-      setErrorMessage('Invalid username or password'); // Show error to user
+      console.error('Login failed', error);
+      setErrorMessage('Invalid username or password.');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-md rounded p-6 w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
-        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <video autoPlay loop muted className="w-full h-full object-cover">
+          <source src="/path-to-your-stock-video.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black opacity-50"></div>
+
+      {/* Login Form */}
+      <div className="relative z-10 bg-white p-8 rounded shadow-md w-96">
+        <h2 className="text-3xl font-bold mb-6 text-center text-blue-600">
+          Welcome Back
+        </h2>
+        {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700">Username</label>

@@ -19,10 +19,11 @@ from django.urls import path, include
 from rest_framework_simplejwt import views as jwt_views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  # Admin panel
+    path('admin/', admin.site.urls),
     path('auth/', include([
+        path('register/', include('portfolio.urls')),  # If you have registration
         path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
         path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     ])),
-    path('api/', include('portfolio.urls')),  # Portfolio app
+    path('api/', include('portfolio.urls')),
 ]

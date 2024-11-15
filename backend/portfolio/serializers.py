@@ -35,3 +35,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+    
+class PortfolioItemCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioItem
+        fields = ['stock', 'quantity', 'purchase_price']
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        return PortfolioItem.objects.create(user=user, **validated_data)
+
+class PortfolioItemUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioItem
+        fields = ['quantity', 'purchase_price']
